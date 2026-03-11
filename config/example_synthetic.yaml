@@ -1,0 +1,57 @@
+# Example synthetic data generation configuration
+# Demonstrates multi-phase conditional generation
+
+input_path: data/anonymized.csv
+output_path: data/synthetic.csv
+strategy: hybrid     # "copula", "ctgan", "tvae", or "hybrid"
+n_rows: 10000        # 0 = match input size
+sample_frac: 1.0     # fraction of input used for training
+epochs: 300
+batch_size: 500
+seed: 42
+dev: false           # true = small sample, few epochs for quick testing
+validate: true       # run quality checks after generation
+save_model: false
+report_dir: reports
+sparse_threshold: 0.5
+
+# Multi-phase generation : each phase is trained on a subset of columns,
+# conditioned on outputs from prior phases
+phases:
+  - name: demographics
+    columns: [age, gender, region, marital_status]
+    strategy: copula
+    sparse: false
+
+  - name: financial
+    columns: [income, balance, credit_score]
+    strategy: ctgan
+    sparse: false
+    condition_on: [demographics]
+
+  - name: behavioural
+    columns: [login_frequency, transaction_count, account_tenure]
+    strategy: copula
+    sparse: false
+    condition_on: [demographics, financial]
+
+  - name: sparse_fields
+    columns: [secondary_address, alternate_phone]
+    strategy: copula
+    sparse: true
+    condition_on: [demographics]
+
+# Column type overrides (auto-detected if not specified)
+column_sdtypes:
+  age: numerical
+  gender: categorical
+  region: categorical
+  marital_status: categorical
+  income: numerical
+  balance: numerical
+  credit_score: numerical
+  login_frequency: numerical
+  transaction_count: numerical
+  account_tenure: numerical
+  secondary_address: categorical
+  alternate_phone: categorical

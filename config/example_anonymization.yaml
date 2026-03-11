@@ -1,0 +1,91 @@
+# Example anonymization configuration
+# Demonstrates all available options for the AnonymizationPipeline
+
+profile: ml          # "ml" (lighter, k=5) or "public" (stronger, k=20)
+seed: 42
+k_target: 5
+date_max_days: 7
+numeric_noise_pct: 0.02
+numeric_round_to: 2
+skip_categorical_eq: false
+equalize_column: ""  # set to a categorical column name to flatten its distribution
+null_token: UNKNOWN
+
+columns:
+  drop:
+    # Direct identifiers : dropped entirely
+    direct_ids:
+      - full_name
+      - email
+      - phone_number
+      - national_id
+      - address_line_1
+      - address_line_2
+      - postal_code
+
+    # Organisational fingerprints : columns that identify the data source
+    fingerprints:
+      - source_system_code
+      - internal_batch_id
+
+    # Operational columns : not useful for analysis
+    operational:
+      - etl_timestamp
+      - row_checksum
+      - debug_flag
+
+  # Quasi-identifiers : generalised rather than dropped
+  quasi_identifiers:
+    - column: age
+      method: band
+      params: {width: 10}
+    - column: income
+      method: round_to
+      params: {step: 5000}
+    - column: region
+      method: top_n
+      params: {n: 6}
+    - column: credit_score
+      method: cap
+      params: {lower: 300, upper: 850}
+
+  # Numeric targets : noise injection
+  numeric_targets:
+    - column: balance
+      noise_type: multiplicative
+      noise_pct: 0.05
+      round_to: 2
+    - column: transaction_amount
+      noise_type: laplacian
+      scale: 10.0
+      round_to: 2
+
+  # Date columns : HMAC-based perturbation
+  date_columns:
+    - created_date
+    - last_login_date
+
+  # Column rename map : applied as final step
+  rename_map:
+    full_name: name_redacted
+    postal_code: location_area
+
+# Fingerprint patterns : regex scan across all string columns
+fingerprint_patterns:
+  - pattern: "\\b\\d{3}-\\d{2}-\\d{4}\\b"
+    replacement: "[SSN_REDACTED]"
+    case_insensitive: false
+  - pattern: "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z]{2,}\\b"
+    replacement: "[EMAIL_REDACTED]"
+    case_insensitive: true
+
+# Sparse groups : columns with many rare values to suppress before k-anonymity
+sparse_groups:
+  - postal_code
+  - occupation_detail
+
+# QI groups : each group is checked independently for k-anonymity
+qi_groups:
+  - [age, region, gender]
+  - [income, credit_score]
+  - [postal_code, age]

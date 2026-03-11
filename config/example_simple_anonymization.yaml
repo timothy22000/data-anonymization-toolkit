@@ -1,0 +1,25 @@
+# Minimal anonymization config : just the essentials
+# Good starting point for small datasets
+
+profile: ml
+seed: 42
+k_target: 5
+
+columns:
+  drop:
+    direct_ids: [name, email, phone, ssn]
+  quasi_identifiers:
+    - column: age
+      method: band
+      params: {width: 10}
+    - column: region
+      method: top_n
+      params: {n: 6}
+  numeric_targets:
+    - column: salary
+      noise_type: multiplicative
+      noise_pct: 0.05
+      round_to: 2
+
+qi_groups:
+  - [age, region, gender]

@@ -1,0 +1,31 @@
+# Example red team adversarial testing configuration
+
+profile: ml             # "ml" or "public"
+mode: anonymized         # "anonymized" or "synthetic"
+k_target: 5
+max_sample: 50000
+random_seed: 42
+
+# Quasi-identifier columns the attacker might know from external sources
+qi_columns:
+  - age
+  - gender
+  - region
+  - income
+  - credit_score
+  - marital_status
+  - account_tenure
+
+# Fingerprint patterns to scan for (should have been scrubbed)
+fingerprint_patterns:
+  - pattern: "\\bACME\\b"
+    replacement: "company"
+  - pattern: "\\b\\d{3}-\\d{2}-\\d{4}\\b"
+    replacement: "[SSN]"
+
+# Numeric columns to check for noise and precision
+numeric_targets:
+  - balance
+  - income
+  - transaction_amount
+  - credit_score
