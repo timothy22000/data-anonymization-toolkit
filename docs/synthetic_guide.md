@@ -1,4 +1,4 @@
-# Synthetic Data Generation Guide
+# Synthetic Data Modelling & Generation Guide
 
 ## Overview
 

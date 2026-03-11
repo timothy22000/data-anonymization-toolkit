@@ -6,7 +6,7 @@ A config-driven Python toolkit for anonymizing tabular datasets, generating synt
 
 - **10-step anonymization pipeline** : Drop PII, generalise quasi-identifiers, inject calibrated noise, enforce k-anonymity
 - **Config-driven** : All column names and parameters defined in YAML, no hardcoded references
-- **Synthetic data generation** : Multi-phase conditional generation using SDV (GaussianCopula, CTGAN, TVAE)
+- **Synthetic data modelling & generation** : Multi-phase conditional generation using SDV (GaussianCopula, CTGAN, TVAE)
 - **Statistical quality validation** : Chi-square, Kolmogorov-Smirnov, correlation fidelity, Jensen-Shannon divergence
 - **Privacy metrics** : Membership inference AUC, duplicate class rate, nearest-neighbour distances
 - **Adversarial red team** : 10 automated attacks testing re-identification, fingerprinting, and linkage risks
@@ -40,8 +40,8 @@ The toolkit implements three pillars of data protection:
               ┌──────────────────┼──────────────────┐
               ▼                  ▼                   ▼
     ┌─────────────────┐ ┌───────────────┐ ┌─────────────────┐
-    │ Anonymised Data  │ │  Synthetic    │ │   Validation    │
-    │   (direct use)   │ │  Generation   │ │  & Red Team     │
+    │ Anonymised Data  │ │ Synthetic Data│ │   Validation    │
+    │   (direct use)   │ │   Modelling   │ │  & Red Team     │
     └─────────────────┘ └───────────────┘ └─────────────────┘
 ```
 
@@ -54,9 +54,47 @@ The pipeline applies a sequence of transformations to reduce re-identification r
 - **Date perturbation**: HMAC-based deterministic offsets ensure consistency across re-runs while preventing calendar-based linkage.
 - **k-Anonymity enforcement**: Iterative suppression ensures every combination of quasi-identifiers appears in at least k records.
 
-### Synthetic Generation
+### Synthetic Data Modelling & Generation
 
-Multi-phase conditional generation trains separate SDV models on column subsets, with each phase conditioned on outputs from prior phases. This preserves complex inter-column dependencies while allowing different synthesizer strategies per group.
+Rather than training a single model on all columns simultaneously, the pipeline splits columns into semantic phases. Each phase trains its own generative model on a column subset, conditioned on outputs from prior phases. This preserves complex inter-column dependencies while allowing different synthesizer strategies per group.
+
+```
+Phase 1: Demographics    → Train model → Generate
+                                            ↓ (condition)
+Phase 2: Financial       → Train model → Generate
+                                            ↓ (condition)
+Phase 3: Behavioural     → Train model → Generate
+                                            ↓ (condition)
+Phase 4: Sparse fields   → Train model → Generate
+```
+
+**Why multi-phase?**
+- Captures inter-phase dependencies through conditioning without a single monolithic model
+- Handles sparse columns (high null rates) in dedicated phases
+- Allows different synthesizer strategies per phase : use fast models for simple distributions, deep learning for complex ones
+
+**Supported synthesizer models:**
+
+| Model | Approach | Best For |
+|-------|----------|----------|
+| **GaussianCopula** | Fits marginal distributions + Gaussian copula for joint dependencies | Fast training, continuous-heavy data |
+| **CTGAN** | Conditional GAN with mode-specific normalisation | Mixed categorical/numeric, complex distributions |
+| **TVAE** | Variational autoencoder with triplet loss | Complex multi-modal distributions |
+| **Hybrid** | Per-phase strategy selection : defaults to copula, overridable per phase | Production use : match strategy to column characteristics |
+
+**Column profiling** auto-detects each column's sdtype (numerical, categorical, datetime) and sparsity, with optional `column_sdtypes` overrides in config.
+
+**Key synthetic configuration:**
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `strategy` | `copula` | Global synthesizer: copula, ctgan, tvae, hybrid |
+| `epochs` | 300 | Training epochs (CTGAN/TVAE only) |
+| `batch_size` | 500 | Mini-batch size (CTGAN/TVAE only) |
+| `n_rows` | 0 | Target synthetic rows (0 = match input size) |
+| `phases[].condition_on` | all prior | Which prior phases to condition on |
+| `column_sdtypes` | auto | Override auto-detected column types |
+| `sparse_threshold` | 0.5 | Null rate above which a column is marked sparse |
 
 ### Adversarial Validation
 
@@ -103,7 +141,7 @@ conda activate data-anonymization-toolkit
 
 # Or install with pip
 pip install -e .                # core dependencies
-pip install -e ".[synthetic]"   # + SDV for synthetic generation
+pip install -e ".[synthetic]"   # + SDV for synthetic data modelling
 pip install -e ".[reporting]"   # + ReportLab for PDF guides
 pip install -e ".[all]"         # everything
 ```
@@ -199,7 +237,7 @@ data-anonymization-toolkit/
 │   ├── noise.py            # Noise injection + date perturbation
 │   ├── fingerprint.py      # Fingerprint scrubbing
 │   └── k_anonymity.py      # k-anonymity enforcement
-├── synthetic/              # Synthetic data generation
+├── synthetic/              # Synthetic data modelling & generation
 │   ├── config.py           # SyntheticConfig + YAML loader
 │   ├── generator.py        # ColumnProfiler, DataPreparer
 │   └── synthesizers.py     # PhaseTrainer (SDV wrapper)
