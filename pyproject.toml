@@ -21,6 +21,3 @@ dependencies = [
 synthetic = ["sdv>=1.17"]
 reporting = ["reportlab"]
 all = ["sdv>=1.17", "reportlab", "statsmodels"]
-
-[project.scripts]
-anonymize-data = "scripts.anonymize_data:main"

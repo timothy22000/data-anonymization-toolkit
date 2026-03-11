@@ -14,4 +14,3 @@ dependencies:
     - statsmodels
     - reportlab
     - pyyaml
-    - imagehash>=4.3.0

@@ -1,4 +1,4 @@
-# Data Anonymization Toolkit
+ # Data Anonymization Toolkit
 
 A config-driven Python toolkit for anonymizing tabular datasets, generating synthetic data, and validating privacy guarantees through adversarial testing.
 
@@ -74,9 +74,17 @@ conda env create -f environment.yml
 conda activate data-anonymization-toolkit
 
 # Or install with pip
-pip install pandas numpy scipy scikit-learn pyyaml
-pip install sdv        # optional: for synthetic generation
-pip install reportlab  # optional: for PDF guide generation
+pip install -e .                # core dependencies
+pip install -e ".[synthetic]"   # + SDV for synthetic generation
+pip install -e ".[reporting]"   # + ReportLab for PDF guides
+pip install -e ".[all]"         # everything
+```
+
+### Verify Installation
+
+```bash
+python -c "from anonymization import AnonymizationPipeline; print('OK')"
+python scripts/anonymize_data.py --help
 ```
 
 ## Usage
