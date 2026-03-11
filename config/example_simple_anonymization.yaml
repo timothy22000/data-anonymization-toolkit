@@ -1,5 +1,6 @@
 # Minimal anonymization config : just the essentials
 # Good starting point for small datasets
+# Works with the included sample data: python scripts/create_sample_data.py
 
 profile: ml
 seed: 42
@@ -7,7 +8,8 @@ k_target: 5
 
 columns:
   drop:
-    direct_ids: [name, email, phone, ssn]
+    direct_ids: [full_name, email, phone_number, national_id]
+    fingerprints: [source_system_code, internal_batch_id]
   quasi_identifiers:
     - column: age
       method: band
@@ -16,10 +18,17 @@ columns:
       method: top_n
       params: {n: 6}
   numeric_targets:
-    - column: salary
+    - column: income
       noise_type: multiplicative
       noise_pct: 0.05
       round_to: 2
+    - column: balance
+      noise_type: multiplicative
+      noise_pct: 0.03
+      round_to: 2
+  date_columns:
+    - created_date
+    - last_login_date
 
 qi_groups:
   - [age, region, gender]

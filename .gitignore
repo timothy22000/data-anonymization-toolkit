@@ -19,7 +19,9 @@ CLAUDE.md
 *.csv
 *.pkl
 *.pickle
-data/
+data/*
+!data/sample.csv
+!data/sample_anonymized.csv
 output/
 reports/
 models/

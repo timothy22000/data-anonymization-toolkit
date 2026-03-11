@@ -87,5 +87,4 @@ sparse_groups:
 # QI groups : each group is checked independently for k-anonymity
 qi_groups:
   - [age, region, gender]
-  - [income, credit_score]
-  - [postal_code, age]
+  - [age, marital_status]

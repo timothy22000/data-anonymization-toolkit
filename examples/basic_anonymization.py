@@ -13,8 +13,9 @@ def main():
     # --- Option 1: Load config from YAML ---
     config = load_config("config/example_simple_anonymization.yaml")
 
-    # Load your data
-    df = pd.read_csv("data/input.csv")
+    # Load your data (use included sample or your own)
+    # Generate sample data first: python scripts/create_sample_data.py
+    df = pd.read_csv("data/sample.csv")
 
     # Run the full pipeline
     pipeline = AnonymizationPipeline(config)

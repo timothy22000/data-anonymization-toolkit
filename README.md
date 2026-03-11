@@ -62,6 +62,34 @@ Multi-phase conditional generation trains separate SDV models on column subsets,
 
 Ten automated attacks probe the anonymized/synthetic output for residual privacy risks: uniqueness profiling, temporal linkage, fingerprint detection, outlier re-identification, distribution skew, null-pattern linkage, rare-combination linkage, numeric precision leaks, ratio preservation, and compound-entity fingerprinting.
 
+## Quick Start
+
+Sample data is included so you can see the anonymization effect immediately:
+
+```bash
+# Compare before and after (included in the repo)
+head data/sample.csv           # 500 rows, 16 columns : includes PII, dates, financials
+head data/sample_anonymized.csv # 339 rows, 10 columns : PII dropped, values generalised
+
+# Or regenerate from scratch
+python scripts/create_sample_data.py
+python scripts/anonymize_data.py \
+    --input data/sample.csv \
+    --output data/anonymized.csv \
+    --config config/example_simple_anonymization.yaml
+```
+
+**What changes:**
+| Before | After |
+|--------|-------|
+| `full_name`, `email`, `phone_number`, `national_id` | Dropped (direct identifiers) |
+| `source_system_code`, `internal_batch_id` | Dropped (fingerprints) |
+| `age: 51` | `age: 50 - 60` (banded) |
+| `region: Northeast` | `region: Other` (top-N capping) |
+| `income: 40617.24` | `income: 40021.53` (noise injected) |
+| `created_date: 2024-03-12` | `created_date: 2024-03-09` (perturbed) |
+| Rows where QI groups have <5 members | Suppressed (k-anonymity) |
+
 ## Setup & Installation
 
 ```bash
@@ -124,8 +152,8 @@ from anonymization.config import load_config
 from anonymization.anonymizer import AnonymizationPipeline
 
 # Load config and data
-config = load_config("config/example_anonymization.yaml")
-df = pd.read_csv("data/input.csv")
+config = load_config("config/example_simple_anonymization.yaml")
+df = pd.read_csv("data/sample.csv")
 
 # Run full pipeline
 pipeline = AnonymizationPipeline(config)
